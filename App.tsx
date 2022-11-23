@@ -7,9 +7,10 @@ import {
   Dimensions,
   StyleSheet,
   StatusBar,
+  ScrollView,
+  LayoutRectangle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-const { width, height } = Dimensions.get('screen');
 import { Entypo } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
@@ -23,56 +24,176 @@ const articleParagraphs = [
   'Improve ashamed married expense bed her comfort pursuit mrs. Four time took ye your as fail lady. Up greatest am exertion or marianne. Shy occasional terminated insensible and inhabiting gay. So know do fond to half on. Now who promise was justice new winding. In finished on he speaking suitable advanced if. Boy happiness sportsmen say prevailed offending concealed nor was provision. Provided so as doubtful on striking required. Waiting we to compass assured. ',
 ];
 
-const getImage = (i) =>
+const getImage = (i: number) =>
   `https://source.unsplash.com/600x${400 + i}/?blackandwhite`;
 
+const { width, height } = Dimensions.get('screen');
+
 export default () => {
+  const [bottomAction, setBottomAction] = React.useState<LayoutRectangle>(null);
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+
+  const topEdge = bottomAction?.y - height + bottomAction?.height + 56;
+  const inputRange = [-1, 0, topEdge - 30, topEdge, topEdge + 1];
+
   return (
     <SafeAreaView>
-      <StatusBar hidden />
-      <View style={[styles.bottomActions, { paddingHorizontal: 20 }]}>
+      <StatusBar />
+      <Animated.ScrollView
+        contentContainerStyle={{ padding: 20 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
+      >
+        <Text style={styles.heading}>Black and white</Text>
+        {articleParagraphs.map((text, index) => {
+          return (
+            <View key={index}>
+              {index % 3 === 0 && (
+                <Image style={styles.image} source={{ uri: getImage(index) }} />
+              )}
+              <Text style={styles.paragraph}>{text}</Text>
+            </View>
+          );
+        })}
         <View
-          style={{
-            flexDirection: 'row',
-            height: 60,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          onLayout={(ev) => setBottomAction(ev.nativeEvent.layout)}
+          style={[styles.bottomActions]}
+        ></View>
+        <View>
+          <Text style={styles.featuredTitle}>Featured</Text>
+          {articleParagraphs.slice(0, 3).map((text, index) => {
+            return (
+              <View
+                key={index}
+                style={{
+                  flexDirection: 'row',
+                  marginBottom: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Image
+                  style={styles.featuredImage}
+                  source={{ uri: getImage(index) }}
+                />
+                <Text numberOfLines={3} style={styles.paragraph}>
+                  {text}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </Animated.ScrollView>
+      {/* footer */}
+      {bottomAction && (
+        <Animated.View
+          style={[
+            styles.bottomActions,
+            {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              paddingHorizontal: 20,
+              transform: [
+                {
+                  translateY: scrollY.interpolate({
+                    inputRange,
+                    outputRange: [0, 0, 0, 0, -1],
+                  }),
+                },
+              ],
+            },
+          ]}
         >
-          <Entypo
-            name="adjust"
-            size={24}
-            color="black"
-            style={{ marginHorizontal: 10 }}
-          />
-          <Text>326</Text>
-        </View>
-        <View style={{ flexDirection: 'row' }}>
-          <View style={[styles.icon]}>
-            <Entypo name="export" size={24} color="black" />
+          <View
+            style={{
+              flexDirection: 'row',
+              height: 60,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Entypo
+              name="adjust"
+              size={24}
+              color="black"
+              style={{ marginHorizontal: 10 }}
+            />
+            <Animated.Text
+              style={{
+                opacity: scrollY.interpolate({
+                  inputRange,
+                  outputRange: [0, 0, 0, 1, 1],
+                }),
+              }}
+            >
+              326
+            </Animated.Text>
           </View>
-          <View style={[styles.icon]}>
-            <Entypo name="credit" size={24} color="green" />
+          <View style={{ flexDirection: 'row' }}>
+            <Animated.View
+              style={[
+                styles.icon,
+                {
+                  opacity: scrollY.interpolate({
+                    inputRange,
+                    outputRange: [0, 0, 0, 1, 1],
+                  }),
+                },
+              ]}
+            >
+              <Entypo name="export" size={24} color="black" />
+            </Animated.View>
+            <Animated.View
+              style={[
+                styles.icon,
+                {
+                  transform: [
+                    {
+                      translateX: scrollY.interpolate({
+                        inputRange,
+                        outputRange: [60, 60, 60, 0, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Entypo name="credit" size={24} color="green" />
+            </Animated.View>
+            <Animated.View
+              style={[
+                styles.icon,
+                {
+                  opacity: scrollY.interpolate({
+                    inputRange,
+                    outputRange: [0, 0, 0, 1, 1],
+                  }),
+                },
+              ]}
+            >
+              <Entypo name="share-alternative" size={24} color="black" />
+            </Animated.View>
           </View>
-          <View style={[styles.icon]}>
-            <Entypo name="share-alternative" size={24} color="black" />
-          </View>
-        </View>
-      </View>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   featuredImage: {
-    width: 50,
-    height: 50,
+    width: 65,
+    height: 65,
     resizeMode: 'cover',
     marginRight: 20,
     borderRadius: 10,
   },
   bottomActions: {
-    height: 80,
+    height: 60,
     backgroundColor: 'white',
     alignItems: 'center',
     justifyContent: 'space-between',
